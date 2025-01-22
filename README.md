@@ -45,9 +45,9 @@ if SecurityKit.isJailBroken() {
 ### Simulator detection
 ```
 if SecurityKit.isSimulator() {
-    print("This device is jailbroken")
+    print("app is running on the simulator")
 } else {
-    print("This device is not jailbroken")
+    print("app is not running on the simulator")
 }
 ```
 ## Contribute
