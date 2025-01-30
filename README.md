@@ -24,7 +24,7 @@ dependencies: [
 
 ### Update Info.plist
 For jailbreak detection to work correctly, you need to update your main Info.plist.
-```
+```xml
 <key>LSApplicationQueriesSchemes</key>
 <array>
     <string>cydia</string>
@@ -35,7 +35,7 @@ For jailbreak detection to work correctly, you need to update your main Info.pli
 </array>
 ```
 ### Jailbreak detection
-```
+```swift
 if SecurityKit.isJailBroken() {
     print("This device is jailbroken")
 } else {
@@ -43,11 +43,19 @@ if SecurityKit.isJailBroken() {
 }
 ```
 ### Simulator detection
-```
+```swift
 if SecurityKit.isSimulator() {
     print("app is running on the simulator")
 } else {
     print("app is not running on the simulator")
+}
+```
+### Reverse engineering tools detection
+```swift
+if SecurityKit.isReverseEngineered() {
+    print("This device has reverse engineering tools")
+} else {
+    print("This device does not have reverse engineering tools")
 }
 ```
 ## Contribute
