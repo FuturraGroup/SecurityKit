@@ -84,7 +84,7 @@ internal class JailbreakDetection {
                 if !SimulatorDetection.isSimulator() {
                     return detectFork()
                 } else {
-                    print("App run in the simulator, skipping the fork detect.")
+                    print("SecurityKit: App run in the simulator, skipping the fork detect.")
                     return (true, "")
                 }
             case .symbolicLinks:

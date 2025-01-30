@@ -35,6 +35,7 @@ For jailbreak detection to work correctly, you need to update your main Info.pli
 </array>
 ```
 ### Jailbreak detection
+* This type method is used to detect the true/false jailbreak status
 ```swift
 if SecurityKit.isJailBroken() {
     print("This device is jailbroken")
@@ -42,7 +43,26 @@ if SecurityKit.isJailBroken() {
     print("This device is not jailbroken")
 }
 ```
+* This type method is used to detect the jailbreak status with a message which jailbreak indicator was detected
+```swift
+let jailbreakStatus = SecurityKit.isJailBrokenWithErrorMessage()
+if jailbreakStatus.jailbroken {
+    print("This device is jailbroken")
+    print("Because: \(jailbreakStatus.errorMessage)")
+} else {
+    print("This device is not jailbroken")
+}
+```
+* This type method is used to detect the jailbreak status with a list of failed detects
+```swift
+let jailbreakStatus = SecurityKit.isJailBrokenWithErrorDetects()
+if jailbreakStatus.jailbroken {
+    print("This device is jailbroken")
+    print("The following checks failed: \(jailbreakStatus.errorDetects)")
+}
+```
 ### Simulator detection
+* This type method is used to detect if application is run in simulator
 ```swift
 if SecurityKit.isSimulator() {
     print("app is running on the simulator")
@@ -51,11 +71,57 @@ if SecurityKit.isSimulator() {
 }
 ```
 ### Reverse engineering tools detection
+* This type method is used to detect if there are any popular reverse engineering tools installed on the device
 ```swift
 if SecurityKit.isReverseEngineered() {
     print("This device has reverse engineering tools")
 } else {
     print("This device does not have reverse engineering tools")
+}
+```
+* This type method is used to detect the reverse engineered status with a list of failed detects
+```swift
+let reStatus = SecurityKit.isReverseEngineeredWithErrorDetect()
+if reStatus.reverseEngineered {
+    print("SecurityKit: This device has evidence of reverse engineering")
+    print("SecurityKit: The following detects failed: \(reStatus.errorDetect)")
+}
+```
+### Debugger detection
+* This type method is used to detect if application is being debugged
+```swift
+let isDebugged: Bool = SecurityKit.isDebugged()
+```
+* This type method is used to deny debugger and improve the application resillency
+```swift
+SecurityKit.denyDebugger()
+```
+* This method is used to detect if application was launched by something other than LaunchD (i.e. the app was launched by a debugger)
+```swift
+let isNotLaunchD: Bool = SecurityKit.isParentPidUnexpected()
+```
+* This type method is used to detect if there are any breakpoints at the function
+```swift
+func denyDebugger() {
+    // add a breakpoint at here to test
+}
+
+typealias FunctionType = @convention(thin) ()->()
+
+let func_denyDebugger: FunctionType = denyDebugger   // `: FunctionType` is a must
+let func_addr = unsafeBitCast(func_denyDebugger, to: UnsafeMutableRawPointer.self)
+let hasBreakpoint: Bool = SecurityKit.hasBreakpointAt(func_addr, functionSize: nil)
+```
+* This type method is used to detect if a watchpoint is being used.
+A watchpoint is a type of breakpoint that 'watches' an area of memory associated with a data item.
+```swift
+// Set a breakpoint at the testWatchpoint function
+func testWatchpoint() -> Bool{
+    // lldb: watchpoint set expression ptr
+    var ptr = malloc(9)
+    // lldb: watchpoint set variable count
+    var count = 3
+    return SecurityKit.hasWatchpoint()
 }
 ```
 ## Contribute

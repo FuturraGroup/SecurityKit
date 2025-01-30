@@ -138,7 +138,7 @@ internal class ReverseEngineeringDetection {
         let sysctlRet = sysctl(&mib, UInt32(mib.count), &kinfo, &size, nil, 0)
         
         if sysctlRet != 0 {
-            print("Error occured when calling sysctl(). This detect may not be reliable")
+            print("SecurityKit: Error occured when calling sysctl(). This detect may not be reliable")
         }
         
         if (kinfo.kp_proc.p_flag & P_SELECT) != 0 {
