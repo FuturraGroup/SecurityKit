@@ -16,6 +16,17 @@ import ObjectiveC
 internal class JailbreakDetection {
     typealias DetectResult = (passed: Bool, errorMessage: String)
     
+    // These files can give false positive in the simulator
+    private let pathsWithoutSimulator = [
+        "/bin/bash",
+        "/usr/sbin/sshd",
+        "/usr/bin/ssh",
+        "/usr/libexec/ssh-keysign",
+        "/bin/sh",
+        "/etc/ssh/sshd_config",
+        "/usr/libexec/sftp-server"
+    ]
+    
     struct JailbreakStatus {
         let passed: Bool
         let errorMessage: String
@@ -41,13 +52,13 @@ internal class JailbreakDetection {
         var errorMessage = ""
         var errorDetects: [ErrorDetectType] = []
         
-        for check in ErrorDetect.allCases {
-            let result = getResult(from: check)
+        for detect in ErrorDetect.allCases {
+            let result = getResult(from: detect)
             
             passed = passed && result.passed
             
             if !result.passed {
-                errorDetects.append((check: check, errorMessage: result.errorMessage))
+                errorDetects.append((detect: detect, errorMessage: result.errorMessage))
                 
                 if !errorMessage.isEmpty {
                     errorMessage += ", "
@@ -59,29 +70,29 @@ internal class JailbreakDetection {
         
         return JailbreakStatus(passed: passed, errorMessage: errorMessage, errorDetects: errorDetects)
         
-        func getResult(from check: ErrorDetect) -> DetectResult {
-            switch check {
+        func getResult(from detect: ErrorDetect) -> DetectResult {
+            switch detect {
             case .urlSchemes:
-                return checkURLSchemes()
+                return detectURLSchemes()
             case .existenceOfSuspiciousFiles:
-                return checkExistenceOfSuspiciousFiles()
+                return detectExistenceOfSuspiciousFiles()
             case .suspiciousFilesCanBeOpened:
-                return checkSuspiciousFilesCanBeOpened()
+                return detectSuspiciousFilesCanBeOpened()
             case .restrictedDirectoriesWriteable:
-                return checkRestrictedDirectoriesWriteable()
+                return detectRestrictedDirectoriesWriteable()
             case .fork:
                 if !SimulatorDetection.isSimulator() {
-                    return checkFork()
+                    return detectFork()
                 } else {
-                    print("App run in the emulator, skipping the fork check.")
+                    print("App run in the simulator, skipping the fork detect.")
                     return (true, "")
                 }
             case .symbolicLinks:
-                return checkSymbolicLinks()
+                return detectSymbolicLinks()
             case .dyld:
-                return checkDYLD()
+                return detectDYLD()
             case .suspiciousObjCClasses:
-                return checkSuspiciousObjCClasses()
+                return detectSuspiciousObjCClasses()
             default:
                 return (true, "")
             }
@@ -99,7 +110,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func checkURLSchemes() -> DetectResult {
+    private static func detectURLSchemes() -> DetectResult {
         let urlSchemes = [
             "cydia://",
             "undecimus://",
@@ -110,7 +121,7 @@ internal class JailbreakDetection {
         return canOpenUrlFromList(urlSchemes: urlSchemes)
     }
     
-    private static func checkExistenceOfSuspiciousFiles() -> DetectResult {
+    private static func detectExistenceOfSuspiciousFiles() -> DetectResult {
         var paths = [
             "/var/mobile/Library/Preferences/ABPattern", // A-Bypass
             "/usr/lib/ABDYLD.dylib", // A-Bypass,
@@ -171,7 +182,7 @@ internal class JailbreakDetection {
             "/usr/lib/libsubstitute.dylib",
             "/usr/lib/substrate",
             "/usr/lib/TweakInject",
-            "/var/binpack/Applications/loader.app", // checkra1n
+            "/var/binpack/Applications/loader.app", // detectra1n
             "/Applications/FlyJB.app", // Fly JB X
             "/Applications/Zebra.app", // Zebra
             "/Library/BawAppie/ABypass", // ABypass
@@ -182,30 +193,22 @@ internal class JailbreakDetection {
             "/var/mobile/Library/Preferences/me.jjolano.shadow.plist"
         ]
         
-        // These files can give false positive in the emulator
+        // These files can give false positive in the simulator
         if !SimulatorDetection.isSimulator() {
-            paths += [
-                "/bin/bash",
-                "/usr/sbin/sshd",
-                "/usr/libexec/ssh-keysign",
-                "/bin/sh",
-                "/etc/ssh/sshd_config",
-                "/usr/libexec/sftp-server",
-                "/usr/bin/ssh"
-            ]
+            paths += JailbreakDetection().pathsWithoutSimulator
         }
         
         for path in paths {
             if FileManager.default.fileExists(atPath: path) {
                 return (false, "Suspicious file exists: \(path)")
-            } else if let result = FileDetection.checkExistenceOfSuspiciousFilesViaStat(path: path) {
+            } else if let result = FileDetection.detectExistenceOfSuspiciousFilesViaStat(path: path) {
                 return result
-            } else if let result = FileDetection.checkExistenceOfSuspiciousFilesViaFOpen(
+            } else if let result = FileDetection.detectExistenceOfSuspiciousFilesViaFOpen(
                 path: path,
                 mode: .readable
             ) {
                 return result
-            } else if let result = FileDetection.checkExistenceOfSuspiciousFilesViaAccess(
+            } else if let result = FileDetection.detectExistenceOfSuspiciousFilesViaAccess(
                 path: path,
                 mode: .readable
             ) {
@@ -216,7 +219,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func checkSuspiciousFilesCanBeOpened() -> DetectResult {
+    private static func detectSuspiciousFilesCanBeOpened() -> DetectResult {
         var paths = [
             "/.installed_unc0ver",
             "/.bootstrapped_electra",
@@ -226,24 +229,20 @@ internal class JailbreakDetection {
             "/var/log/apt"
         ]
         
-        // These files can give false positive in the emulator
+        // These files can give false positive in the simulator
         if !SimulatorDetection.isSimulator() {
-            paths += [
-                "/bin/bash",
-                "/usr/sbin/sshd",
-                "/usr/bin/ssh"
-            ]
+            paths += JailbreakDetection().pathsWithoutSimulator
         }
         
         for path in paths {
             if FileManager.default.isReadableFile(atPath: path) {
                 return (false, "Suspicious file can be opened: \(path)")
-            } else if let result = FileDetection.checkExistenceOfSuspiciousFilesViaFOpen(
+            } else if let result = FileDetection.detectExistenceOfSuspiciousFilesViaFOpen(
                 path: path,
                 mode: .writable
             ) {
                 return result
-            } else if let result = FileDetection.checkExistenceOfSuspiciousFilesViaAccess(
+            } else if let result = FileDetection.detectExistenceOfSuspiciousFilesViaAccess(
                 path: path,
                 mode: .writable
             ) {
@@ -254,7 +253,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func checkRestrictedDirectoriesWriteable() -> DetectResult {
+    private static func detectRestrictedDirectoriesWriteable() -> DetectResult {
         let paths = [
             "/",
             "/root/",
@@ -262,11 +261,11 @@ internal class JailbreakDetection {
             "/jb/"
         ]
         
-        if FileDetection.checkRestrictedPathIsReadonlyViaStatvfs(path: "/") == false {
+        if FileDetection.detectRestrictedPathIsReadonlyViaStatvfs(path: "/") == false {
             return (false, "Restricted path '/' is not Read-Only")
-        } else if FileDetection.checkRestrictedPathIsReadonlyViaStatfs(path: "/") == false {
+        } else if FileDetection.detectRestrictedPathIsReadonlyViaStatfs(path: "/") == false {
             return (false, "Restricted path '/' is not Read-Only")
-        } else if FileDetection.checkRestrictedPathIsReadonlyViaGetfsstat(name: "/") == false {
+        } else if FileDetection.detectRestrictedPathIsReadonlyViaGetfsstat(name: "/") == false {
             return (false, "Restricted path '/' is not Read-Only")
         }
         
@@ -275,7 +274,7 @@ internal class JailbreakDetection {
         for path in paths {
             do {
                 let pathWithSomeRandom = path + UUID().uuidString
-                try "AmIJailbroken?".write(
+                try "SecurityKit".write(
                     toFile: pathWithSomeRandom,
                     atomically: true,
                     encoding: String.Encoding.utf8
@@ -289,7 +288,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func checkFork() -> DetectResult {
+    private static func detectFork() -> DetectResult {
         let pointerToFork = UnsafeMutableRawPointer(bitPattern: -2)
         let forkPtr = dlsym(pointerToFork, "fork")
         typealias ForkType = @convention(c) () -> pid_t
@@ -306,7 +305,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func checkSymbolicLinks() -> DetectResult {
+    private static func detectSymbolicLinks() -> DetectResult {
         let paths = [
             "/var/lib/undecimus/apt", // unc0ver
             "/Applications",
@@ -330,7 +329,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func checkDYLD() -> DetectResult {
+    private static func detectDYLD() -> DetectResult {
         let suspiciousLibraries: Set<String> = [
             "systemhook.dylib", // Dopamine - hide jailbreak detection https://github.com/opa334/Dopamine/blob/dc1a1a3486bb5d74b8f2ea6ada782acdc2f34d0a/Application/Dopamine/Jailbreak/DOEnvironmentManager.m#L498
             "SubstrateLoader.dylib",
@@ -363,7 +362,7 @@ internal class JailbreakDetection {
         for index in 0..<_dyld_image_count() {
             let imageName = String(cString: _dyld_get_image_name(index))
             
-            // The fastest case insensitive contains check.
+            // The fastest case insensitive contains detect.
             for library in suspiciousLibraries where imageName.localizedCaseInsensitiveContains(library) {
                 return (false, "Suspicious library loaded: \(imageName)")
             }
@@ -372,7 +371,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func checkSuspiciousObjCClasses() -> DetectResult {
+    private static func detectSuspiciousObjCClasses() -> DetectResult {
         if let shadowRulesetClass = objc_getClass("ShadowRuleset") as? NSObject.Type {
             let selector = Selector(("internalDictionary"))
             if class_getInstanceMethod(shadowRulesetClass, selector) != nil {
@@ -383,7 +382,7 @@ internal class JailbreakDetection {
     }
 }
 
-public typealias ErrorDetectType = (check: ErrorDetect, errorMessage: String)
+public typealias ErrorDetectType = (detect: ErrorDetect, errorMessage: String)
 
 public enum ErrorDetect: CaseIterable {
     case urlSchemes

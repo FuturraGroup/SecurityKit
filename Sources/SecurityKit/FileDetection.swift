@@ -22,7 +22,7 @@ internal class FileDetection {
     }
     
     /**
-     Used to determine if a file access check should be in Write or Read-Only mode.
+     Used to determine if a file access detect should be in Write or Read-Only mode.
      */
     enum FileMode {
         case readable
@@ -146,13 +146,13 @@ internal class FileDetection {
     }
     
     /**
-     Uses fopen() to check if an file exists and attempts to open it, in either Read-Only or Read-Write mode.
+     Uses fopen() to detect if an file exists and attempts to open it, in either Read-Only or Read-Write mode.
      - Parameters:
      - path: The file path to open.
      - mode: Determines if the file will be opened in Writable or Read-Only mode.
      - returns: Returns nil, if the file does not exist. Returns true if it can be opened with the given mode.
      */
-    static func checkExistenceOfSuspiciousFilesViaFOpen(path: String,
+    static func detectExistenceOfSuspiciousFilesViaFOpen(path: String,
                                                         mode: FileMode) -> DetectResult? {
         // the 'a' or 'w' modes, create the file if it does not exist.
         let mode: String = FileMode.writable == mode ? "r+" : "r"
@@ -166,10 +166,10 @@ internal class FileDetection {
     }
     
     /**
-     Uses stat() to check if a file exists.
+     Uses stat() to detect if a file exists.
      - returns: Returns nil, if stat() returns a non-zero result code.
      */
-    static func checkExistenceOfSuspiciousFilesViaStat(path: String) -> DetectResult? {
+    static func detectExistenceOfSuspiciousFilesViaStat(path: String) -> DetectResult? {
         var statbuf: stat = stat()
         let resultCode = stat((path as NSString).fileSystemRepresentation, &statbuf)
         
@@ -181,13 +181,13 @@ internal class FileDetection {
     }
     
     /**
-     Uses access() to check whether the calling process can access the file path, in either Read-Only or Write mode.
+     Uses access() to detect whether the calling process can access the file path, in either Read-Only or Write mode.
      - Parameters:
      - path: The file path to open.
      - mode: Determines if the file will be accessed in Write mode or Read-Only mode.
      - returns: Returns nil, if access() returns a non-zero result code.
      */
-    static func checkExistenceOfSuspiciousFilesViaAccess(
+    static func detectExistenceOfSuspiciousFilesViaAccess(
         path: String,
         mode: FileMode
     ) -> DetectResult? {
@@ -204,10 +204,10 @@ internal class FileDetection {
     }
     
     /**
-     Checks if statvfs() considers the given path to be Read-Only.
+     detects if statvfs() considers the given path to be Read-Only.
      - Returns: Returns nil, if statvfs() gives a non-zero result.
      */
-    static func checkRestrictedPathIsReadonlyViaStatvfs(
+    static func detectRestrictedPathIsReadonlyViaStatvfs(
         path: String,
         encoding: String.Encoding = .utf8
     ) -> Bool? {
@@ -227,10 +227,10 @@ internal class FileDetection {
     }
     
     /**
-     Checks if statvs() considers the volume associated with given path to be Read-Only.
+     detects if statvs() considers the volume associated with given path to be Read-Only.
      - Returns: Returns nil, if statfs() does not find the mounted volume.
      */
-    static func checkRestrictedPathIsReadonlyViaStatfs(
+    static func detectRestrictedPathIsReadonlyViaStatfs(
         path: String,
         encoding: String.Encoding = .utf8
     ) -> Bool? {
@@ -238,12 +238,12 @@ internal class FileDetection {
     }
     
     /**
-     Checks if Getfsstat() considers the volume to be Read-Only.
+     detects if Getfsstat() considers the volume to be Read-Only.
      - Parameters:
      - name: The filesystem name or mounted directory name to search for.
      - Returns: Returns nil, if a matching mounted volume is not found.
      */
-    static func checkRestrictedPathIsReadonlyViaGetfsstat(name: String) -> Bool? {
+    static func detectRestrictedPathIsReadonlyViaGetfsstat(name: String) -> Bool? {
         return self.getMountedVolumesViaGetfsstat(withName: name)?.isReadOnly
     }
 }

@@ -17,14 +17,22 @@ public class SecurityKit {
     }
     
     public static func isJailBrokenWithErrorMessage() -> (jailbroken: Bool, errorMessage: String) {
-      return JailbreakDetection.isJailBrokenWithErrorMessage()
+        return JailbreakDetection.isJailBrokenWithErrorMessage()
     }
     
     public static func isJailBrokenWithErrorDetects() -> (jailbroken: Bool, errorDetects: [ErrorDetectType]) {
-      return JailbreakDetection.isJailBrokenWithErrorDetects()
+        return JailbreakDetection.isJailBrokenWithErrorDetects()
     }
     
     public static func isSimulator() -> Bool {
-      return SimulatorDetection.isSimulator()
+        return SimulatorDetection.isSimulator()
+    }
+    
+    public static func isReverseEngineered() -> Bool {
+        return ReverseEngineeringDetection.isReverseEngineered()
+    }
+    
+    public static func isReverseEngineeredWithErrorDetect() -> (reverseEngineered: Bool, errorDetect: [ErrorDetectType]) {
+        return ReverseEngineeringDetection.isReverseEngineeredWithErrorDetect()
     }
 }
