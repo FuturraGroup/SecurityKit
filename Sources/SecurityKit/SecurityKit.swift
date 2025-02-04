@@ -10,6 +10,7 @@ import Foundation
 import MachO
 
 @MainActor
+@available(iOSApplicationExtension, unavailable)
 public class SecurityKit {
     /**
      This type method is used to detect the true/false jailbreak status
@@ -137,6 +138,32 @@ public class SecurityKit {
         return DebuggerDetection.isParentPidUnexpected()
     }
     /**
+     This type method is used to detect if application has been tampered with
+    
+     # Example #
+     ```swift
+     if SecurityKit.isTampered(
+       [.bundleID("com.app.bundle"),
+        .mobileProvision("your-mobile-provision-sha256-value")]
+     ).result {
+       print("SecurityKit: I have been Tampered.")
+     } else {
+       print("SecurityKit: I have not been Tampered.")
+     }
+     ```
+    
+     - Parameter checks: The file Integrity checks you want
+     - Returns: The file Integrity checker result
+     */
+    public static func isTampered(_ checks: [FileIntegrityDetect]) -> FileIntegrityDetectResult {
+        return IntegrityDetection.isTampered(checks)
+    }
+}
+
+#if arch(arm64)
+@available(iOSApplicationExtension, unavailable)
+public extension SecurityKit {
+    /**
      This type method is used to detect if there are any breakpoints at the function
     
      # Example #
@@ -177,27 +204,6 @@ public class SecurityKit {
         return DebuggerDetection.hasWatchpoint()
     }
     /**
-     This type method is used to detect if application has been tampered with
-    
-     # Example #
-     ```swift
-     if SecurityKit.isTampered(
-       [.bundleID("com.app.bundle"),
-        .mobileProvision("your-mobile-provision-sha256-value")]
-     ).result {
-       print("SecurityKit: I have been Tampered.")
-     } else {
-       print("SecurityKit: I have not been Tampered.")
-     }
-     ```
-    
-     - Parameter checks: The file Integrity checks you want
-     - Returns: The file Integrity checker result
-     */
-    public static func isTampered(_ checks: [FileIntegrityDetect]) -> FileIntegrityDetectResult {
-        return IntegrityDetection.isTampered(checks)
-    }
-    /**
      This type method is used to get the SHA256 hash value of the executable file in a specified image
     
      - Attention: **Dylib only.** This means you should set Mach-O type as `Dynamic Library` in your *Build Settings*.
@@ -227,7 +233,7 @@ public class SecurityKit {
      - Attention: **Dylib only.** This means you should set Mach-O type as `Dynamic Library` in your *Build Settings*.
     
      # Example #
-    ```swift
+     ```swift
      if let loadedDylib = SecurityKit.findLoadedDylibs() {
        print("SecurityKit: Loaded dylibs: \(loadedDylib)")
      }
@@ -239,4 +245,84 @@ public class SecurityKit {
     static func findLoadedDylibs(_ target: IntegrityDetectionImageTarget = .default) -> [String]? {
         return IntegrityDetection.findLoadedDylibs(target)
     }
+    /**
+     This type method is used to detect if `function_address` has been hooked by `MSHook`
+    
+     # Example #
+     ```swift
+     func denyDebugger() { ... }
+    
+     typealias FunctionType = @convention(thin) ()->()
+    
+     let func_denyDebugger: FunctionType = denyDebugger // `: FunctionType` is must
+     let func_addr = unsafeBitCast(func_denyDebugger, to: UnsafeMutableRawPointer.self)
+     let isMSHooked: Bool = SecurityKit.isMSHooked(func_addr)
+     ```
+     - Returns: Bool indicating if the function has been hooked (true) or not (false)
+     */
+    static func isMSHooked(_ functionAddress: UnsafeMutableRawPointer) -> Bool {
+        return MSHookFunctionDetection.isMSHooked(functionAddress)
+    }
+    /**
+     This type method is used to get original `function_address` which has been hooked by `MSHook`
+    
+     # Example #
+     ```swift
+     func denyDebugger(value: Int) { ... }
+    
+     typealias FunctionType = @convention(thin) (Int)->()
+    
+     let funcDenyDebugger: FunctionType = denyDebugger
+     let funcAddr = unsafeBitCast(funcDenyDebugger, to: UnsafeMutableRawPointer.self)
+    
+     if let originalDenyDebugger = SecurityKit.denyMSHook(funcAddr) {
+     // Call orignal function with 1337 as Int argument
+       unsafeBitCast(originalDenyDebugger, to: FunctionType.self)(1337)
+     } else {
+       denyDebugger()
+     }
+     ```
+     */
+    static func denyMSHook(_ functionAddress: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
+        return MSHookFunctionDetection.denyMSHook(functionAddress)
+    }
+    /**
+     This type method is used to rebind `symbol` which has been hooked by `fishhook`
+    
+     # Example #
+     ```swift
+     SecurityKit.denySymbolHook("$s10Foundation5NSLogyySS_s7CVarArg_pdtF") // Foudation's NSlog of Swift
+     NSLog("Hello Symbol Hook")
+    
+     SecurityKit.denySymbolHook("abort")
+     abort()
+     ```
+     */
+    static func denySymbolHook(_ symbol: String) {
+        FishHookDetection.denyFishHook(symbol)
+    }
+    /**
+     This type method is used to rebind `symbol` which has been hooked at one of image by `fishhook`
+    
+     # Example #
+     ```swift
+     for i in 0..<_dyld_image_count() {
+       if let imageName = _dyld_get_image_name(i) {
+         let name = String(cString: imageName)
+         if name.contains("SecurityKit"), let image = _dyld_get_image_header(i) {
+           SecurityKit.denySymbolHook("dlsym", at: image, imageSlide: _dyld_get_image_vmaddr_slide(i))
+           break
+         }
+       }
+     }
+     ```
+     */
+    static func denySymbolHook(
+        _ symbol: String,
+        at image: UnsafePointer<mach_header>,
+        imageSlide slide: Int
+    ) {
+        FishHookDetection.denyFishHook(symbol, at: image, imageSlide: slide)
+    }
 }
+#endif

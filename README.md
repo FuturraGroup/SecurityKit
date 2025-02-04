@@ -152,6 +152,54 @@ if let loadedDylib = SecurityKit.findLoadedDylibs() {
     print("SecurityKit: Loaded dylibs: \(loadedDylib)")
 }
 ```
+### MSHookFunction detection
+* This type method is used to detect if `function_address` has been hooked by `MSHook`
+```swift
+func denyDebugger() { ... }
+
+typealias FunctionType = @convention(thin) ()->()
+
+let func_denyDebugger: FunctionType = denyDebugger // `: FunctionType` is must
+let func_addr = unsafeBitCast(func_denyDebugger, to: UnsafeMutableRawPointer.self)
+let isMSHooked: Bool = SecurityKit.isMSHooked(func_addr)
+```
+* This type method is used to get original `function_address` which has been hooked by `MSHook`
+```swift
+func denyDebugger(value: Int) { ... }
+
+typealias FunctionType = @convention(thin) (Int)->()
+
+let funcDenyDebugger: FunctionType = denyDebugger
+let funcAddr = unsafeBitCast(funcDenyDebugger, to: UnsafeMutableRawPointer.self)
+
+if let originalDenyDebugger = SecurityKit.denyMSHook(funcAddr) {
+    // Call orignal function with 1337 as Int argument
+    unsafeBitCast(originalDenyDebugger, to: FunctionType.self)(1337)
+} else {
+    denyDebugger()
+}
+```
+### FishHook detection
+* This type method is used to rebind `symbol` which has been hooked by `fishhook`
+```swift
+SecurityKit.denySymbolHook("$s10Foundation5NSLogyySS_s7CVarArg_pdtF") // Foudation's NSlog of Swift
+NSLog("Hello Symbol Hook")
+
+SecurityKit.denySymbolHook("abort")
+abort()
+```
+* This type method is used to rebind `symbol` which has been hooked at one of image by `fishhook`
+```swift
+for i in 0..<_dyld_image_count() {
+    if let imageName = _dyld_get_image_name(i) {
+        let name = String(cString: imageName)
+        if name.contains("SecurityKit"), let image = _dyld_get_image_header(i) {
+            SecurityKit.denySymbolHook("dlsym", at: image, imageSlide: _dyld_get_image_vmaddr_slide(i))
+            break
+        }
+    }
+}
+```
 ## Contribute
 
 Contributions for improvements are welcomed. Feel free to submit a pull request to help grow the library. If you have any questions, feature suggestions, or bug reports, please send them to [Issues](https://github.com/FuturraGroup/SecurityKit/issues).
