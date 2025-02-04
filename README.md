@@ -124,6 +124,34 @@ func testWatchpoint() -> Bool{
     return SecurityKit.hasWatchpoint()
 }
 ```
+### Integrity detection
+* This type method is used to detect if application has been tampered with
+```swift
+if SecurityKit.isTampered(
+    [.bundleID("com.app.bundle"),
+     .mobileProvision("your-mobile-provision-sha256-value")]
+).result {
+    print("SecurityKit: I have been Tampered.")
+} else {
+    print("SecurityKit: I have not been Tampered.")
+}
+```
+* This type method is used to get the SHA256 hash value of the executable file in a specified image
+```swift
+// Manually verify SHA256 hash value of a loaded dylib
+if let hashValue = SecurityKit.getMachOFileHashValue(.custom("SecurityKit")),
+   hashValue == "6d8d460b9a4ee6c0f378e30f137cebaf2ce12bf31a2eef3729c36889158aa7fc" {
+    print("SecurityKit: I have not been Tampered.")
+} else {
+    print("SecurityKit: I have been Tampered.")
+}
+```
+* This type method is used to find all loaded dylibs in the specified image
+```swift
+if let loadedDylib = SecurityKit.findLoadedDylibs() {
+    print("SecurityKit: Loaded dylibs: \(loadedDylib)")
+}
+```
 ## Contribute
 
 Contributions for improvements are welcomed. Feel free to submit a pull request to help grow the library. If you have any questions, feature suggestions, or bug reports, please send them to [Issues](https://github.com/FuturraGroup/SecurityKit/issues).

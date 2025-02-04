@@ -176,4 +176,67 @@ public class SecurityKit {
     static func hasWatchpoint() -> Bool {
         return DebuggerDetection.hasWatchpoint()
     }
+    /**
+     This type method is used to detect if application has been tampered with
+    
+     # Example #
+     ```swift
+     if SecurityKit.isTampered(
+       [.bundleID("com.app.bundle"),
+        .mobileProvision("your-mobile-provision-sha256-value")]
+     ).result {
+       print("SecurityKit: I have been Tampered.")
+     } else {
+       print("SecurityKit: I have not been Tampered.")
+     }
+     ```
+    
+     - Parameter checks: The file Integrity checks you want
+     - Returns: The file Integrity checker result
+     */
+    public static func isTampered(_ checks: [FileIntegrityDetect]) -> FileIntegrityDetectResult {
+        return IntegrityDetection.isTampered(checks)
+    }
+    /**
+     This type method is used to get the SHA256 hash value of the executable file in a specified image
+    
+     - Attention: **Dylib only.** This means you should set Mach-O type as `Dynamic Library` in your *Build Settings*.
+    
+     Calculate the hash value of the `__TEXT.__text` data of the specified image Mach-O file.
+    
+     # Example #
+     ```swift
+     // Manually verify SHA256 hash value of a loaded dylib
+     if let hashValue = SecurityKit.getMachOFileHashValue(.custom("SecurityKit")),
+       hashValue == "6d8d460b9a4ee6c0f378e30f137cebaf2ce12bf31a2eef3729c36889158aa7fc" {
+         print("SecurityKit: I have not been Tampered.")
+     } else {
+       print("SecurityKit: I have been Tampered.")
+     }
+     ```
+    
+     - Parameter target: The target image
+     - Returns: A hash value of the executable file.
+     */
+    static func getMachOFileHashValue(_ target: IntegrityDetectionImageTarget = .default) -> String? {
+        return IntegrityDetection.getMachOFileHashValue(target)
+    }
+    /**
+     This type method is used to find all loaded dylibs in the specified image
+    
+     - Attention: **Dylib only.** This means you should set Mach-O type as `Dynamic Library` in your *Build Settings*.
+    
+     # Example #
+    ```swift
+     if let loadedDylib = SecurityKit.findLoadedDylibs() {
+       print("SecurityKit: Loaded dylibs: \(loadedDylib)")
+     }
+     ```
+    
+     - Parameter target: The target image
+     - Returns: An Array with all loaded dylib names
+    */
+    static func findLoadedDylibs(_ target: IntegrityDetectionImageTarget = .default) -> [String]? {
+        return IntegrityDetection.findLoadedDylibs(target)
+    }
 }
