@@ -158,6 +158,35 @@ public class SecurityKit {
     public static func isTampered(_ checks: [FileIntegrityDetect]) -> FileIntegrityDetectResult {
         return IntegrityDetection.isTampered(checks)
     }
+    /**
+     This type method is used to detect if `objc call` has been RuntimeHooked by for example `Flex`
+    
+     # Example #
+     ```swift
+     class SomeClass {
+       @objc dynamic func someFunction() { ... }
+     }
+    
+     let dylds = ["SecurityKit", ...]
+    
+     let isRuntimeHook: Bool = SecurityKit.isRuntimeHook(
+       dyldAllowList: dylds,
+       detectionClass: SomeClass.self,
+       selector: #selector(SomeClass.someFunction),
+       isClassMethod: false
+      )
+     ```
+    
+     - Returns: Bool indicating if the method is being hooked (true) or not (false)
+     */
+    public static func isRuntimeHook(dyldAllowList: [String], detectionClass: AnyClass, selector: Selector, isClassMethod: Bool) -> Bool {
+        return RuntimeHookDetection.isRuntimeHook(
+            dyldAllowList: dyldAllowList,
+            detectionClass: detectionClass,
+            selector: selector,
+            isClassMethod: isClassMethod
+        )
+    }
 }
 
 #if arch(arm64)
