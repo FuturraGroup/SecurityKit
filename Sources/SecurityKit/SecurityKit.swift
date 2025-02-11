@@ -187,6 +187,31 @@ public class SecurityKit {
             isClassMethod: isClassMethod
         )
     }
+    /**
+     This type method is used to detect if HTTP proxy or VPN was set in the iOS Settings.
+    
+     # Example #
+     ```swift
+     let isProxied: Bool = SecurityKit.isProxied()
+     ```
+     - Returns: Bool indicating if the device has a proxy or VPN setted (true) or not (false)
+     */
+    public static func isProxied(considerVPNConnectionAsProxy: Bool = false) -> Bool {
+        return ProxyDetection.isProxied(considerVPNConnectionAsProxy: considerVPNConnectionAsProxy)
+    }
+    /**
+     This type method is used to detect if the device has lockdown mode turned on.
+    
+     # Example #
+     ```swift
+     let isLockdownModeEnable: Bool = SecurityKit.isLockdownModeEnable()
+     ```
+     - Returns: Bool indicating if the device has lockdown mode turned on (true) or not (false)
+     */
+    @available(iOS 16, *)
+    public static func isLockdownModeEnable() -> Bool {
+        return ModesDetection.isLockdownModeEnable()
+    }
 }
 
 #if arch(arm64)

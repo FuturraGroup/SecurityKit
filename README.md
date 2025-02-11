@@ -216,6 +216,16 @@ let isRuntimeHook: Bool = SecurityKit.isRuntimeHook(
     isClassMethod: false
 )
 ```
+### System proxy and VPN detection
+* This type method is used to detect if HTTP proxy or VPN was set in the iOS Settings.
+```swift
+let isProxied: Bool = SecurityKit.isProxied()
+```
+### Lockdown mode detection
+* This type method is used to detect if the device has lockdown mode turned on.
+```swift
+let isLockdownModeEnable: Bool = SecurityKit.isLockdownModeEnable()
+```
 ## Contribute
 
 Contributions for improvements are welcomed. Feel free to submit a pull request to help grow the library. If you have any questions, feature suggestions, or bug reports, please send them to [Issues](https://github.com/FuturraGroup/SecurityKit/issues).
