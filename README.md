@@ -78,6 +78,11 @@ ViewProtection.shared.makeProtection(for: self.view)
 ```swift
 ViewProtection.shared.removeScreenProtection(for: self.view)
 ```
+### Screen recording protection
+* Screen recording protection, the screen will be completely blurred
+```swift
+BlurScreen.shared.start()
+```
 ### Simulator detection
 * This type method is used to detect if application is run in simulator
 ```swift
