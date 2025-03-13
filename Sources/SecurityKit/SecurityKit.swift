@@ -212,6 +212,45 @@ public class SecurityKit {
     public static func isLockdownModeEnable() -> Bool {
         return ModesDetection.isLockdownModeEnable()
     }
+    /**
+     Hide Sensitive String data from run time binary
+     
+     - parameter String
+     - parameter String
+     - returns   [UInt8]
+     - warning: none
+     
+     # Notes: #
+     Use this method use for encrypt string
+     base on XOR alghorithm
+     # Example #
+     ```
+     //
+     SecurityKit.stringEncryption(plainText : "String", encryptionKey: "String")
+     ```
+     */
+    public static func stringEncryption(plainText : String, encryptionKey: String) -> [UInt8] {
+        return XOREncryption.encryption(plainText: plainText, encryptionKey: encryptionKey)
+    }
+    /**
+     Hide Sensitive String data from run time binary
+     
+     - parameter String
+     - parameter String
+     - returns   String
+     - warning: none
+     
+     # Notes: #
+     Use this method use for array of [UInt8]
+     # Example #
+     ```
+     //
+     SecurityKit.stringDecryption(cypherText: [UInt8]?, decryptionKey : "String")
+     ```
+     */
+    public static func stringDecryption(cypherText: [UInt8]?, decryptionKey : String?) -> String {
+        return XOREncryption.decryption(cypherText: cypherText, decryptionKey: decryptionKey)
+    }
 }
 
 #if arch(arm64)

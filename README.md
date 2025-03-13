@@ -61,6 +61,23 @@ if jailbreakStatus.jailbroken {
     print("The following checks failed: \(jailbreakStatus.errorDetects)")
 }
 ```
+### XOR String obfuscation
+```swift
+// String Encryption
+let encrypt = SecurityKit.stringEncryption(plainText: "plainText", encryptionKey: "key")
+
+// String Decryption
+let decrypt = SecurityKit.stringDecryption(cypherText: encrypt, decryptionKey: "key")
+```
+### View Protection
+* Protecting a specific UIView from being screenshotted
+```swift
+ViewProtection.shared.makeProtection(for: self.view)
+```
+* Remove protection from UIView
+```swift
+ViewProtection.shared.removeScreenProtection(for: self.view)
+```
 ### Simulator detection
 * This type method is used to detect if application is run in simulator
 ```swift
