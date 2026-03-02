@@ -17,6 +17,7 @@ public class BlurScreen: Sendable {
     
     private weak var view: UIView?
     private var timer: Timer?
+    private var isRunning = false
     private init() {}
     
     deinit {
@@ -28,31 +29,32 @@ public class BlurScreen: Sendable {
     private var blurStyle: UIBlurEffect.Style = .dark
     
     public func start(with blurStyle: UIBlurEffect.Style = .dark) {
+        guard !isRunning else { return }
+        isRunning = true
         self.blurStyle = blurStyle
         
-        observers.append(NotificationCenter.default.addObserver(forName: UIScreen.capturedDidChangeNotification, object: nil, queue: OperationQueue.main) { [unowned self] _ in
-            MainActor.assumeIsolated {
-                addRemoveBlur()
-            }
-        })
+        let notifications: [Notification.Name] = [
+            UIScreen.capturedDidChangeNotification,
+            UIApplication.didBecomeActiveNotification,
+            UIApplication.willEnterForegroundNotification,
+            UIApplication.willResignActiveNotification
+        ]
         
-        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: OperationQueue.main) { [unowned self] _ in
-            MainActor.assumeIsolated {
-                addRemoveBlur()
-            }
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: OperationQueue.main) { [unowned self] _ in
-            MainActor.assumeIsolated {
-                addRemoveBlur()
-            }
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: OperationQueue.main) { [unowned self] _ in
-            MainActor.assumeIsolated {
-                addRemoveBlur()
-            }
-        })
+        for name in notifications {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.addRemoveBlur()
+                }
+            })
+        }
+    }
+    
+    public func stop() {
+        guard isRunning else { return }
+        isRunning = false
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
+        observers.removeAll()
+        removeLockView(animated: false)
     }
     
     private func addRemoveBlur(){
@@ -73,20 +75,20 @@ public class BlurScreen: Sendable {
         window.addSubview(blurredEffectView)
         self.view = blurredEffectView
         
-        UIView.animate(withDuration: animated ? 0.175 : 0) { [unowned self] in
-            self.view?.alpha = 1
+        UIView.animate(withDuration: animated ? 0.175 : 0) { [weak self] in
+            self?.view?.alpha = 1
         }
     }
     
     private func removeLockView(animated: Bool = false) {
         guard let view = view else { return }
         
-        UIView.animate(withDuration: animated ? 0.175 : 0) { [unowned view] in
-            view.alpha = 0
-        } completion: { [unowned self] completed in
+        UIView.animate(withDuration: animated ? 0.175 : 0) { [weak view] in
+            view?.alpha = 0
+        } completion: { [weak self, weak view] completed in
             if completed {
-                view.removeFromSuperview()
-                self.view = nil
+                view?.removeFromSuperview()
+                self?.view = nil
             }
         }
     }

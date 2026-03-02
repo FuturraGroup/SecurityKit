@@ -44,6 +44,6 @@ internal class XOREncryption {
         for c in cypher.enumerated() {
             decrypted.append(c.element ^ key[c.offset % length])
         }
-        return String(bytes: decrypted, encoding: .utf8)!
+        return String(bytes: decrypted, encoding: .utf8) ?? ""
     }
 }

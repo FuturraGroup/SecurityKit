@@ -251,6 +251,146 @@ public class SecurityKit {
     public static func stringDecryption(cypherText: [UInt8]?, decryptionKey : String?) -> String {
         return XOREncryption.decryption(cypherText: cypherText, decryptionKey: decryptionKey)
     }
+    /**
+     This type method is used to detect if suspicious environment variables are set (e.g. DYLD_INSERT_LIBRARIES)
+    
+     # Example #
+     ```swift
+     let hasSuspiciousEnv: Bool = SecurityKit.hasSuspiciousEnvironment()
+     ```
+     - Returns: Bool indicating if suspicious environment variables were detected (true) or not (false)
+     */
+    public static func hasSuspiciousEnvironment() -> Bool {
+        return EnvironmentDetection.hasSuspiciousEnvironment()
+    }
+    /**
+     This type method is used to detect if SSL Kill Switch or similar SSL unpinning tools are loaded
+    
+     # Example #
+     ```swift
+     let sslKill: Bool = SecurityKit.isSSLKillSwitchLoaded()
+     ```
+     - Returns: Bool indicating if SSL Kill Switch is loaded (true) or not (false)
+     */
+    public static func isSSLKillSwitchLoaded() -> Bool {
+        return NetworkSecurityDetection.isSSLKillSwitchLoaded()
+    }
+    /**
+     This type method is used to detect if App Transport Security (ATS) is disabled in Info.plist
+    
+     # Example #
+     ```swift
+     let atsDisabled: Bool = SecurityKit.isATSDisabled()
+     ```
+     - Returns: Bool indicating if ATS allows arbitrary loads (true) or not (false)
+     */
+    public static func isATSDisabled() -> Bool {
+        return NetworkSecurityDetection.isATSDisabled()
+    }
+    /**
+     This type method is used to detect if the app's code signature directory has been modified or removed
+    
+     # Example #
+     ```swift
+     let modified: Bool = SecurityKit.isCodeSignatureModified()
+     ```
+     - Returns: Bool indicating if the code signature is modified (true) or not (false)
+     */
+    public static func isCodeSignatureModified() -> Bool {
+        return CodeSignatureDetection.isCodeSignatureModified()
+    }
+    /**
+     This type method is used to detect if the app is running as a development build (has get-task-allow entitlement or provisioned devices list)
+    
+     # Example #
+     ```swift
+     let isDev: Bool = SecurityKit.isDevelopmentBuild()
+     ```
+     - Returns: Bool indicating if the app is a development build (true) or not (false)
+     */
+    public static func isDevelopmentBuild() -> Bool {
+        return CodeSignatureDetection.isDevelopmentBuild()
+    }
+    /**
+     This type method is used to verify the team identifier from the embedded provisioning profile
+    
+     # Example #
+     ```swift
+     let isValid: Bool = SecurityKit.verifyTeamIdentifier("ABCDEF1234")
+     ```
+    
+     - Parameter expectedTeamID: The expected team identifier string
+     - Returns: Bool indicating if the team identifier matches (true) or not (false)
+     */
+    public static func verifyTeamIdentifier(_ expectedTeamID: String) -> Bool {
+        return CodeSignatureDetection.verifyTeamIdentifier(expectedTeamID)
+    }
+    /**
+     This type method is used to detect if a debugger has registered exception ports on the current task
+    
+     # Example #
+     ```swift
+     let hasExceptionPort: Bool = SecurityKit.isExceptionPortSet()
+     ```
+     - Returns: Bool indicating if exception ports are set (true) or not (false)
+     */
+    public static func isExceptionPortSet() -> Bool {
+        return DebuggerDetection.isExceptionPortSet()
+    }
+    /**
+     This type method is used to generate a unique device fingerprint based on vendor ID, Keychain-persisted UUID, and hardware model
+    
+     # Example #
+     ```swift
+     let fingerprint: String = SecurityKit.getDeviceFingerprint()
+     ```
+     - Returns: A SHA256 hex string that uniquely identifies the device
+     */
+    public static func getDeviceFingerprint() -> String {
+        return DeviceBindingDetection.getDeviceFingerprint()
+    }
+#if canImport(CryptoKit)
+    /**
+     AES-GCM encrypt data with a passphrase. The passphrase is hashed with SHA256 to derive a 256-bit key.
+     
+     # Example #
+     ```swift
+     if let encrypted = SecurityKit.aesEncrypt(data: myData, key: "mySecret") {
+         // store encrypted data
+     }
+     ```
+    
+     - Parameters:
+       - data: The data to encrypt
+       - key: A passphrase string (will be SHA256-hashed to derive the symmetric key)
+     - Returns: The encrypted data (nonce + ciphertext + tag), or nil on failure
+     */
+    @available(iOS 13.0, macOS 10.15, *)
+    public static func aesEncrypt(data: Data, key: String) -> Data? {
+        guard let symmetricKey = AESGCMEncryption.key(from: key) else { return nil }
+        return try? AESGCMEncryption.encrypt(data: data, key: symmetricKey)
+    }
+    /**
+     AES-GCM decrypt data with a passphrase. The passphrase is hashed with SHA256 to derive a 256-bit key.
+     
+     # Example #
+     ```swift
+     if let decrypted = SecurityKit.aesDecrypt(data: encryptedData, key: "mySecret") {
+         let string = String(data: decrypted, encoding: .utf8)
+     }
+     ```
+    
+     - Parameters:
+       - data: The encrypted data (as returned by aesEncrypt)
+       - key: The same passphrase used for encryption
+     - Returns: The decrypted data, or nil on failure
+     */
+    @available(iOS 13.0, macOS 10.15, *)
+    public static func aesDecrypt(data: Data, key: String) -> Data? {
+        guard let symmetricKey = AESGCMEncryption.key(from: key) else { return nil }
+        return try? AESGCMEncryption.decrypt(data: data, key: symmetricKey)
+    }
+#endif
 }
 
 #if arch(arm64)

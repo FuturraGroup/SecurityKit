@@ -69,6 +69,22 @@ let encrypt = SecurityKit.stringEncryption(plainText: "plainText", encryptionKey
 // String Decryption
 let decrypt = SecurityKit.stringDecryption(cypherText: encrypt, decryptionKey: "key")
 ```
+### AES-GCM encryption
+* AES-256-GCM authenticated encryption via CryptoKit (iOS 13+). Provides both confidentiality and integrity.
+```swift
+let secret = "sensitive data".data(using: .utf8)!
+
+// Encrypt
+if let encrypted = SecurityKit.aesEncrypt(data: secret, key: "myPassphrase") {
+    print("Encrypted: \(encrypted.base64EncodedString())")
+
+    // Decrypt
+    if let decrypted = SecurityKit.aesDecrypt(data: encrypted, key: "myPassphrase") {
+        let string = String(data: decrypted, encoding: .utf8)
+        print("Decrypted: \(string ?? "")")
+    }
+}
+```
 ### View Protection
 * Protecting a specific UIView from being screenshotted
 ```swift
@@ -82,6 +98,10 @@ ViewProtection.shared.removeScreenProtection(for: self.view)
 * Screen recording protection, the screen will be completely blurred
 ```swift
 BlurScreen.shared.start()
+```
+* Stop screen recording protection
+```swift
+BlurScreen.shared.stop()
 ```
 ### Simulator detection
 * This type method is used to detect if application is run in simulator
@@ -146,6 +166,10 @@ func testWatchpoint() -> Bool{
     return SecurityKit.hasWatchpoint()
 }
 ```
+* This type method is used to detect if a debugger has registered exception ports on the current task
+```swift
+let hasExceptionPort: Bool = SecurityKit.isExceptionPortSet()
+```
 ### Integrity detection
 * This type method is used to detect if application has been tampered with
 ```swift
@@ -172,6 +196,27 @@ if let hashValue = SecurityKit.getMachOFileHashValue(.custom("SecurityKit")),
 ```swift
 if let loadedDylib = SecurityKit.findLoadedDylibs() {
     print("SecurityKit: Loaded dylibs: \(loadedDylib)")
+}
+```
+### Code signature detection
+* This type method is used to detect if the app's code signature directory has been modified or removed
+```swift
+if SecurityKit.isCodeSignatureModified() {
+    print("Code signature has been tampered with")
+}
+```
+* This type method is used to detect if the app is running as a development build
+```swift
+if SecurityKit.isDevelopmentBuild() {
+    print("This is a development build")
+}
+```
+* This type method is used to verify the team identifier from the embedded provisioning profile
+```swift
+if SecurityKit.verifyTeamIdentifier("ABCDEF1234") {
+    print("Team identifier is valid")
+} else {
+    print("Team identifier mismatch — app may have been re-signed")
 }
 ```
 ### MSHookFunction detection
@@ -247,6 +292,107 @@ let isProxied: Bool = SecurityKit.isProxied()
 * This type method is used to detect if the device has lockdown mode turned on.
 ```swift
 let isLockdownModeEnable: Bool = SecurityKit.isLockdownModeEnable()
+```
+### Environment variables detection
+* This type method is used to detect suspicious environment variables commonly used for code injection (e.g. `DYLD_INSERT_LIBRARIES`, `SUBSTRATE_INSERT_LIBRARIES`)
+```swift
+if SecurityKit.hasSuspiciousEnvironment() {
+    print("Suspicious environment variables detected")
+}
+```
+### Network security detection
+* This type method is used to detect if SSL Kill Switch or similar SSL unpinning tools are loaded
+```swift
+if SecurityKit.isSSLKillSwitchLoaded() {
+    print("SSL Kill Switch detected — network traffic may be intercepted")
+}
+```
+* This type method is used to detect if App Transport Security (ATS) is disabled in Info.plist
+```swift
+if SecurityKit.isATSDisabled() {
+    print("ATS is disabled — insecure HTTP connections are allowed")
+}
+```
+### Device fingerprint
+* This type method generates a unique, stable SHA256 device fingerprint based on vendor ID, Keychain-persisted UUID, and hardware model
+```swift
+let fingerprint: String = SecurityKit.getDeviceFingerprint()
+print("Device fingerprint: \(fingerprint)")
+```
+### Secure Storage
+* A Keychain wrapper for securely storing sensitive data with configurable accessibility levels
+```swift
+let storage = SecureStorage()
+
+// Save a string
+storage.save("secret-token", for: "auth_token")
+
+// Load a string
+if let token = storage.loadString(for: "auth_token") {
+    print("Token: \(token)")
+}
+
+// Save raw data
+let data = "sensitive".data(using: .utf8)!
+storage.save(data, for: "secret_data")
+
+// Load raw data
+if let loaded = storage.loadData(for: "secret_data") {
+    print("Data: \(loaded)")
+}
+
+// Check existence
+let exists: Bool = storage.exists(key: "auth_token")
+
+// Delete a single item
+storage.delete(key: "auth_token")
+
+// Delete all items for this service
+storage.deleteAll()
+```
+* Custom access levels for different security requirements
+```swift
+// Most secure — requires passcode, bound to this device
+let secure = SecureStorage(accessLevel: .whenPasscodeSetThisDeviceOnly)
+
+// Available after first unlock, even when locked (for background tasks)
+let background = SecureStorage(accessLevel: .afterFirstUnlockThisDeviceOnly)
+
+// Custom service identifier
+let custom = SecureStorage(service: "com.myapp.credentials", accessLevel: .whenUnlockedThisDeviceOnly)
+```
+### Memory Protection
+* Securely wipe sensitive data from memory to prevent forensic recovery
+```swift
+var secretData = "password123".data(using: .utf8)!
+MemoryProtection.wipe(&secretData)
+// secretData is now empty
+
+var secretBytes: [UInt8] = [0x41, 0x42, 0x43]
+MemoryProtection.wipe(&secretBytes)
+// secretBytes is now empty
+
+var secretString = "my-api-key"
+MemoryProtection.wipe(&secretString)
+// secretString is now ""
+```
+### Clipboard Protection
+* Clear the clipboard immediately or after a delay to prevent sensitive data leakage
+```swift
+// Clear clipboard immediately
+ClipboardProtection.shared.clearClipboard()
+
+// Clear clipboard after 30 seconds (default)
+ClipboardProtection.shared.clearAfterDelay()
+
+// Clear clipboard after custom delay
+ClipboardProtection.shared.clearAfterDelay(10)
+
+// Check if clipboard has content
+let hasContent: Bool = ClipboardProtection.shared.hasContent()
+
+// Cancel pending auto-clear
+ClipboardProtection.shared.stopAutoClear()
 ```
 ## Contribute
 

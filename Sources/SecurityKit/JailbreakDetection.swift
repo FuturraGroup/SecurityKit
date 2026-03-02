@@ -16,8 +16,7 @@ import ObjectiveC
 internal class JailbreakDetection {
     typealias DetectResult = (passed: Bool, errorMessage: String)
     
-    // These files can give false positive in the simulator
-    private let pathsWithoutSimulator = [
+    private static let pathsWithoutSimulator = [
         "/bin/bash",
         "/usr/sbin/sshd",
         "/usr/bin/ssh",
@@ -93,6 +92,8 @@ internal class JailbreakDetection {
                 return detectDYLD()
             case .suspiciousObjCClasses:
                 return detectSuspiciousObjCClasses()
+            case .environmentVariables:
+                return EnvironmentDetection.detectSuspiciousEnvironment()
             default:
                 return (true, "")
             }
@@ -146,7 +147,6 @@ internal class JailbreakDetection {
             "/var/lib/cydia",
             "/etc/apt",
             "/private/var/lib/apt",
-            "/private/var/Users/",
             "/var/log/apt",
             "/Applications/Cydia.app",
             "/private/var/stash",
@@ -190,12 +190,26 @@ internal class JailbreakDetection {
             "/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.plist", // PreferenceLoader
             "/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.dylib", // PreferenceLoader
             "/Library/MobileSubstrate/DynamicLibraries", // DynamicLibraries directory in general
-            "/var/mobile/Library/Preferences/me.jjolano.shadow.plist"
+            "/var/mobile/Library/Preferences/me.jjolano.shadow.plist",
+            // Rootless jailbreaks (palera1n, Dopamine v2)
+            "/var/jb",
+            "/var/jb/usr/lib",
+            "/var/jb/usr/bin/dpkg",
+            "/var/jb/usr/bin/apt-get",
+            "/var/jb/Library",
+            "/var/jb/basebin",
+            "/var/jb/basebin/jbctl",
+            "/var/jb/basebin/jbinit",
+            // palera1n
+            "/cores/binpack",
+            "/cores/binpack/Applications/palera1nLoader.app",
+            // TrollStore
+            "/var/mobile/Library/Preferences/com.opa334.TrollStore.plist"
         ]
         
         // These files can give false positive in the simulator
         if !SimulatorDetection.isSimulator() {
-            paths += JailbreakDetection().pathsWithoutSimulator
+            paths += pathsWithoutSimulator
         }
         
         for path in paths {
@@ -231,7 +245,7 @@ internal class JailbreakDetection {
         
         // These files can give false positive in the simulator
         if !SimulatorDetection.isSimulator() {
-            paths += JailbreakDetection().pathsWithoutSimulator
+            paths += pathsWithoutSimulator
         }
         
         for path in paths {
@@ -356,7 +370,12 @@ internal class JailbreakDetection {
             "Shadow",
             "FridaGadget",
             "frida",
-            "libcycript"
+            "libcycript",
+            "roothideinit.dylib",
+            "ellekit",
+            "libellekit",
+            "palera1nHelper",
+            "bootstrapd"
         ]
         
         for index in 0..<_dyld_image_count() {
@@ -395,4 +414,5 @@ public enum ErrorDetect: CaseIterable {
     case openedPorts
     case pSelectFlag
     case suspiciousObjCClasses
+    case environmentVariables
 }

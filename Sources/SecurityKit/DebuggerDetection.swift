@@ -8,6 +8,7 @@
 
 import Foundation
 @preconcurrency import Darwin
+import MachO
 
 internal class DebuggerDetection {
     // https://developer.apple.com/library/archive/qa/qa1361/_index.html
@@ -25,7 +26,9 @@ internal class DebuggerDetection {
     }
     
     static func denyDebugger() {
-        // bind ptrace()
+#if arch(arm64)
+        FishHookDetection.denyFishHook("ptrace")
+#endif
         let pointerToPtrace = UnsafeMutableRawPointer(bitPattern: -2)
         let ptracePtr = dlsym(pointerToPtrace, "ptrace")
         typealias PtraceType = @convention(c) (CInt, pid_t, CInt, CInt) -> CInt
@@ -37,6 +40,40 @@ internal class DebuggerDetection {
         if ptraceRet != 0 {
             print("SecurityKit: Error occured when calling ptrace(). Denying debugger may not be reliable")
         }
+    }
+    
+    static func isExceptionPortSet() -> Bool {
+        let capacity = 14
+        let masks = UnsafeMutablePointer<exception_mask_t>.allocate(capacity: capacity)
+        let handlers = UnsafeMutablePointer<exception_handler_t>.allocate(capacity: capacity)
+        let behaviors = UnsafeMutablePointer<exception_behavior_t>.allocate(capacity: capacity)
+        let flavors = UnsafeMutablePointer<thread_state_flavor_t>.allocate(capacity: capacity)
+        var count = mach_msg_type_number_t(capacity)
+        
+        defer {
+            masks.deallocate()
+            handlers.deallocate()
+            behaviors.deallocate()
+            flavors.deallocate()
+        }
+        
+        let result = task_get_exception_ports(
+            mach_task_self_,
+            exception_mask_t(0x3FFE),
+            masks,
+            &count,
+            handlers,
+            behaviors,
+            flavors
+        )
+        
+        if result == KERN_SUCCESS {
+            for i in 0..<Int(count) where handlers[i] != 0 {
+                return true
+            }
+        }
+        
+        return false
     }
     
 #if arch(arm64)

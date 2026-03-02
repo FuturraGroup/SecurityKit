@@ -41,6 +41,8 @@ internal class ReverseEngineeringDetection {
                 result = detectOpenedPorts()
             case .pSelectFlag:
                 result = detectPSelectFlag()
+            case .environmentVariables:
+                result = EnvironmentDetection.detectSuspiciousEnvironment()
             default:
                 continue
             }
@@ -58,9 +60,15 @@ internal class ReverseEngineeringDetection {
     private static func detectDYLD() -> DetectResult {
         let suspiciousLibraries: Set<String> = [
             "FridaGadget",
-            "frida", // Needle injects frida-somerandom.dylib
+            "frida",
             "cynject",
-            "libcycript"
+            "libcycript",
+            "SSLKillSwitch",
+            "SSLKillSwitch2",
+            "RevealServer",
+            "r2frida",
+            "Objection",
+            "objection_agent"
         ]
         
         for index in 0..<_dyld_image_count() {
@@ -77,11 +85,25 @@ internal class ReverseEngineeringDetection {
     
     private static func detectExistenceOfSuspiciousFiles() -> DetectResult {
         let paths = [
-            "/usr/sbin/frida-server"
+            "/usr/sbin/frida-server",
+            "/usr/local/bin/frida-server",
+            "/usr/lib/frida/frida-agent.dylib",
+            "/usr/bin/frida-trace",
+            "/usr/local/bin/cycript",
+            "/usr/lib/libcycript.dylib",
+            "/usr/local/bin/r2",
+            "/usr/local/bin/radare2",
+            "/usr/local/bin/objection"
         ]
         
         for path in paths where FileManager.default.fileExists(atPath: path) {
             return (false, "Suspicious file found: \(path)")
+        }
+        
+        if let tmpContents = try? FileManager.default.contentsOfDirectory(atPath: "/tmp") {
+            for file in tmpContents where file.hasPrefix("frida-") || file.hasPrefix("linjector") {
+                return (false, "Suspicious named pipe found: /tmp/\(file)")
+            }
         }
         
         return (true, "")
