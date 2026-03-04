@@ -31,7 +31,14 @@ internal class ReverseEngineeringDetection {
         var result: DetectResult = (true, "")
         var errorDetect: [ErrorDetectType] = []
         
-        for detect in ErrorDetect.allCases {
+        let reverseEngineeringDetects: [ErrorDetect] = [
+            .existenceOfSuspiciousFiles,
+            .dyld,
+            .openedPorts,
+            .pSelectFlag
+        ]
+        
+        for detect in reverseEngineeringDetects {
             switch detect {
             case .existenceOfSuspiciousFiles:
                 result = detectExistenceOfSuspiciousFiles()
@@ -41,8 +48,6 @@ internal class ReverseEngineeringDetection {
                 result = detectOpenedPorts()
             case .pSelectFlag:
                 result = detectPSelectFlag()
-            case .environmentVariables:
-                result = EnvironmentDetection.detectSuspiciousEnvironment()
             default:
                 continue
             }

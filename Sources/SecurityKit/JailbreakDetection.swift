@@ -51,7 +51,18 @@ internal class JailbreakDetection {
         var errorMessage = ""
         var errorDetects: [ErrorDetectType] = []
         
-        for detect in ErrorDetect.allCases {
+        let jailbreakDetects: [ErrorDetect] = [
+            .urlSchemes,
+            .existenceOfSuspiciousFiles,
+            .suspiciousFilesCanBeOpened,
+            .restrictedDirectoriesWriteable,
+            .fork,
+            .symbolicLinks,
+            .dyld,
+            .suspiciousObjCClasses
+        ]
+        
+        for detect in jailbreakDetects {
             let result = getResult(from: detect)
             
             passed = passed && result.passed
@@ -92,8 +103,6 @@ internal class JailbreakDetection {
                 return detectDYLD()
             case .suspiciousObjCClasses:
                 return detectSuspiciousObjCClasses()
-            case .environmentVariables:
-                return EnvironmentDetection.detectSuspiciousEnvironment()
             default:
                 return (true, "")
             }
