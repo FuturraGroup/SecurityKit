@@ -9,7 +9,6 @@
 import Foundation
 import MachO
 
-@MainActor
 @available(iOSApplicationExtension, unavailable)
 public class SecurityKit {
     /**
@@ -22,7 +21,7 @@ public class SecurityKit {
      
      - Returns: Bool indicating if the device has jailbreak (true) or not (false)
      */
-    public static func isJailBroken() -> Bool {
+    @MainActor public static func isJailBroken() -> Bool {
         return JailbreakDetection.isJailBroken()
     }
     /**
@@ -41,7 +40,7 @@ public class SecurityKit {
      
      - Returns: Tuple with with the jailbreak status (Bool) and failMessage (String)
      */
-    public static func isJailBrokenWithErrorMessage() -> (jailbroken: Bool, errorMessage: String) {
+    @MainActor public static func isJailBrokenWithErrorMessage() -> (jailbroken: Bool, errorMessage: String) {
         return JailbreakDetection.isJailBrokenWithErrorMessage()
     }
     /**
@@ -58,7 +57,7 @@ public class SecurityKit {
     
      - Returns: Tuple with with the jailbreak status (Bool) and a list of ``ErrorDetectType``
      */
-    public static func isJailBrokenWithErrorDetects() -> (jailbroken: Bool, errorDetects: [ErrorDetectType]) {
+    @MainActor public static func isJailBrokenWithErrorDetects() -> (jailbroken: Bool, errorDetects: [ErrorDetectType]) {
         return JailbreakDetection.isJailBrokenWithErrorDetects()
     }
     /**
@@ -346,7 +345,7 @@ public class SecurityKit {
      ```
      - Returns: A SHA256 hex string that uniquely identifies the device
      */
-    public static func getDeviceFingerprint() -> String {
+    @MainActor public static func getDeviceFingerprint() -> String {
         return DeviceBindingDetection.getDeviceFingerprint()
     }
 #if canImport(CryptoKit)

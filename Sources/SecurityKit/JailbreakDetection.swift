@@ -12,7 +12,6 @@ import Darwin
 import MachO
 import ObjectiveC
 
-@MainActor
 internal class JailbreakDetection {
     typealias DetectResult = (passed: Bool, errorMessage: String)
     
@@ -32,21 +31,21 @@ internal class JailbreakDetection {
         let errorDetects: [ErrorDetectType]
     }
     
-    static func isJailBroken() -> Bool {
+    @MainActor static func isJailBroken() -> Bool {
         return !performDetect().passed
     }
     
-    static func isJailBrokenWithErrorMessage() -> (jailbroken: Bool, errorMessage: String) {
+    @MainActor static func isJailBrokenWithErrorMessage() -> (jailbroken: Bool, errorMessage: String) {
         let status = performDetect()
         return (!status.passed, status.errorMessage)
     }
     
-    static func isJailBrokenWithErrorDetects() -> (jailbroken: Bool, errorDetects: [ErrorDetectType]) {
+    @MainActor static func isJailBrokenWithErrorDetects() -> (jailbroken: Bool, errorDetects: [ErrorDetectType]) {
         let status = performDetect()
         return (!status.passed, status.errorDetects)
     }
     
-    private static func performDetect() -> JailbreakStatus {
+    @MainActor private static func performDetect() -> JailbreakStatus {
         var passed = true
         var errorMessage = ""
         var errorDetects: [ErrorDetectType] = []
@@ -109,7 +108,7 @@ internal class JailbreakDetection {
         }
     }
     
-    private static func canOpenUrlFromList(urlSchemes: [String]) -> DetectResult {
+    @MainActor private static func canOpenUrlFromList(urlSchemes: [String]) -> DetectResult {
         for urlScheme in urlSchemes {
             if let url = URL(string: urlScheme) {
                 if UIApplication.shared.canOpenURL(url) {
@@ -120,7 +119,7 @@ internal class JailbreakDetection {
         return (true, "")
     }
     
-    private static func detectURLSchemes() -> DetectResult {
+    @MainActor private static func detectURLSchemes() -> DetectResult {
         let urlSchemes = [
             "cydia://",
             "undecimus://",

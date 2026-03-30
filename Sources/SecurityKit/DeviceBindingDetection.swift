@@ -15,8 +15,7 @@ import CommonCrypto
 /// a Keychain-persisted UUID, and the hardware model string.
 ///
 /// The fingerprint survives app reinstalls (Keychain persists) and is hashed with SHA256
-/// to produce a consistent hex string. Requires `@MainActor` for `UIDevice` access.
-@MainActor
+/// to produce a consistent hex string.
 internal class DeviceBindingDetection {
     
     /// Keychain service used to persist the device-unique UUID
@@ -32,7 +31,7 @@ internal class DeviceBindingDetection {
      
      - Returns: A 64-character lowercase hex string (SHA256 digest) uniquely identifying this device
      */
-    static func getDeviceFingerprint() -> String {
+    @MainActor static func getDeviceFingerprint() -> String {
         let vendorID = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
         let persistentID = getOrCreatePersistentID()
         let model = deviceModel()
